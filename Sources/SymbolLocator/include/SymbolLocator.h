@@ -1,0 +1,87 @@
+//
+//  SymbolLocator.h
+//  SymbolLocator
+
+#ifndef SYMBOL_LOCATOR_H
+#define SYMBOL_LOCATOR_H
+
+#include "metamacros.h"
+#include <dlfcn.h>
+#include <stddef.h>
+
+#if defined(__cplusplus)
+#define SL_EXPORT extern "C"
+#else
+#define SL_EXPORT extern
+#endif
+
+#define SL_SLF_NAME(X) "/System/Library/Frameworks/" #X ".framework/" #X
+#define SL_SLPF_NAME(X) "/System/Library/PrivateFrameworks/" #X ".framework/" #X
+
+#define _SL_STUB_NAME(X) X
+#define _SL_STUB_TARGET_NAME(X) metamacro_concat(_SL_STUB_NAME(X), _ptr)
+
+#define _SL_SYMBOL(X) metamacro_concat(_, X)
+#define _SL_STUB_SYMBOL(X) _SL_SYMBOL(_SL_STUB_NAME(X))
+#define _SL_STUB_TARGET_SYMBOL(X) _SL_SYMBOL(_SL_STUB_TARGET_NAME(X))
+#define _SL_STUB_LOADER(X) metamacro_concat(_SL_STUB_NAME(X), Loader)
+
+void* findSymbolInFramework(void *handle, const char* frameworkPath, const char* mangledName);
+
+// Define a symbol stub that maps a function to its implementation
+
+#define DEFINE_SL_STUB_SLF(symbolName, framework, mangledName) \
+    DEFINE_SL_STUB(symbolName, \
+        SL_SLF_NAME(framework), \
+        mangledName \
+    )
+
+#define DEFINE_SL_STUB_SLPF(symbolName, framework, mangledName) \
+    DEFINE_SL_STUB(symbolName, \
+        SL_SLPF_NAME(framework), \
+        mangledName \
+    )
+
+// Define common stub code for all architectures
+#define _SL_STUB_COMMON(symbolName, frameworkPath, mangledName) \
+    SL_EXPORT void* _SL_STUB_TARGET_NAME(symbolName); \
+    void *_SL_STUB_TARGET_NAME(symbolName) = 0; \
+    __attribute__((constructor)) \
+    static void _SL_STUB_LOADER(symbolName)(void) { \
+        void* handle = dlopen(frameworkPath, RTLD_LAZY); \
+        _SL_STUB_TARGET_NAME(symbolName) = findSymbolInFramework(handle, frameworkPath, #mangledName); \
+        if (handle != NULL) { \
+            dlclose(handle); \
+        } \
+    }
+
+// Architecture-specific assembly macros
+#if defined(__x86_64__) || defined(__i386__)
+#define _SL_STUB_ASM(symbolName) \
+    __asm__ (metamacro_stringify(.global _SL_STUB_SYMBOL(symbolName))); \
+    __asm__ (metamacro_stringify(_SL_STUB_SYMBOL(symbolName) :)); \
+    __asm__ (metamacro_stringify(jmpq    * _SL_STUB_TARGET_SYMBOL(symbolName)(%rip)));
+
+#elif defined(__arm64__) || defined(__aarch64__)
+#define _SL_STUB_ASM(symbolName) \
+    __attribute__((visibility("default"))) \
+    __attribute__((used)) \
+    __asm__( \
+        ".text\n" \
+        ".global _" #symbolName "\n" \
+        ".align 2\n" \
+        "_" #symbolName ":\n" \
+        "adrp x16, _" #symbolName "_ptr@PAGE\n" \
+        "ldr x16, [x16, _" #symbolName "_ptr@PAGEOFF]\n" \
+        "br x16\n" \
+    );
+#else
+#error "Architecture not supported"
+#endif
+
+// Combined macro that uses the common part and architecture-specific assembly
+#define DEFINE_SL_STUB(symbolName, frameworkPath, mangledName) \
+    _SL_STUB_COMMON(symbolName, frameworkPath, mangledName) \
+    _SL_STUB_ASM(symbolName)
+
+#endif /* SYMBOL_LOCATOR_H */
