@@ -1,7 +1,9 @@
 import Testing
 import SymbolLocator
 import SymbolLocatorTestsSupport
-import Foundation
+
+#if canImport(SwiftUI, _underlyingVersion: 6.0.87)
+import SwiftUI
 
 extension CGSize {
     var hasZero: Bool {
@@ -10,7 +12,9 @@ extension CGSize {
     }
 }
 
-@Test func example() async throws {
+// Example for simple getter method
+@Test
+func sizeExample() async throws {
     let size1 = CGSize(width: 0, height: 0)
     let size2 = CGSize(width: 1, height: 0)
     let size3 = CGSize(width: 0, height: 1)
@@ -20,3 +24,29 @@ extension CGSize {
     #expect(size3.hasZero)
     #expect(!size4.hasZero)
 }
+
+enum Update {}
+
+extension Update {
+    @_silgen_name("SymbolLocatorTestsSupportTestStub_UpdateLocked")
+    static func locked<T>(_ body: () throws -> T) rethrows -> T
+}
+
+// Example for generic and throwing function
+@Test
+func updateLockedExample() async throws {
+    let result = Update.locked { 3 }
+    #expect(result == 3)
+    enum E: Error {
+        case a, b
+    }
+    try await confirmation { confirm in
+        do {
+            let _ = try Update.locked { throw E.b }
+        } catch E.a {
+            confirm()
+        }
+    }
+}
+
+#endif
