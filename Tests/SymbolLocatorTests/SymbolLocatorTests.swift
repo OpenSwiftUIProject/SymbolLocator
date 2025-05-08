@@ -43,10 +43,29 @@ func updateLockedExample() async throws {
     try await confirmation { confirm in
         do {
             let _ = try Update.locked { throw E.b }
-        } catch E.a {
+        } catch E.b {
             confirm()
         }
     }
 }
+
+@_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_VOID")
+func unknown_symbol_void()
+
+@_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_CGCOLOR")
+func unknown_symbol_cgColor() -> CGColor
+
+@Test
+func nonExistSymbol() {
+    unknown_symbol_void()
+
+    #if compiler(>=6.2) && os(macOS)
+    await #expect(processExitsWith: .failure) {
+        let color = unknown_symbol_cgColor()
+        color.alpha
+    }
+    #endif
+}
+
 
 #endif
