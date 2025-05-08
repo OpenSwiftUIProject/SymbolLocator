@@ -8,7 +8,6 @@
 #include "metamacros.h"
 #include <dlfcn.h>
 #include <stddef.h>
-#include "SymbolLocatorLog.h"
 
 #if defined(__cplusplus)
 #define SL_EXPORT extern "C"
@@ -70,9 +69,14 @@ void* findSymbolInFramework(void *handle, const char* frameworkPath, const char*
 
 #if defined(__x86_64__) || defined(__i386__)
 #define _SL_STUB_ASM(symbolName) \
-    __asm__ (metamacro_stringify(.global _SL_STUB_SYMBOL(symbolName))); \
-    __asm__ (metamacro_stringify(_SL_STUB_SYMBOL(symbolName) :)); \
-    __asm__ (metamacro_stringify(jmpq    * _SL_STUB_TARGET_SYMBOL(symbolName)(%rip)));
+    __attribute__((visibility("default"))) \
+    __attribute__((used)) \
+    __asm__( \
+        ".text\n" \
+        ".global _" #symbolName "\n" \
+        "_" #symbolName ":\n" \
+        "jmpq    *_" #symbolName "_ptr(%rip)\n" \
+    );
 
 #elif defined(__arm64__) || defined(__aarch64__)
 #define _SL_STUB_ASM(symbolName) \
@@ -93,18 +97,23 @@ void* findSymbolInFramework(void *handle, const char* frameworkPath, const char*
 
 #if defined(__x86_64__) || defined(__i386__)
 #define _SL_SAFE_STUB_ASM(symbolName) \
-    __asm__ (metamacro_stringify(.global _SL_STUB_SYMBOL(symbolName))); \
-    __asm__ (metamacro_stringify(_SL_STUB_SYMBOL(symbolName) :)); \
-    __asm__ (metamacro_stringify(cmpq    $0, _SL_STUB_TARGET_SYMBOL(symbolName)(%rip))); \
-    __asm__ (metamacro_stringify(jne     2f)); \
-    __asm__ (metamacro_stringify(leaq    L ## symbolName ## _str(%rip), %rdi)); \
-    __asm__ (metamacro_stringify(jmp     _symbol_locator_log_error)); \
-    __asm__ (metamacro_stringify(2:)); \
-    __asm__ (metamacro_stringify(jmpq    *_SL_STUB_TARGET_SYMBOL(symbolName)(%rip))); \
-    __asm__ (metamacro_stringify(.data)); \
-    __asm__ (metamacro_stringify(L ## symbolName ## _str:)); \
-    __asm__ (metamacro_stringify(.asciz "Failed to resolve symbol: ) #symbolName")); \
-    __asm__ (metamacro_stringify(.text));
+    __attribute__((visibility("default"))) \
+    __attribute__((used)) \
+    __asm__( \
+        ".text\n" \
+        ".global _" #symbolName "\n" \
+        "_" #symbolName ":\n" \
+        "cmpq    $0, _" #symbolName "_ptr(%rip)\n" \
+        "jne     2f\n" \
+        "leaq    L" #symbolName "_str(%rip), %rdi\n" \
+        "jmp     _symbol_locator_log_error\n" \
+        "2:\n" \
+        "jmpq    *_" #symbolName "_ptr(%rip)\n" \
+        ".data\n" \
+        "L" #symbolName "_str:\n" \
+        ".asciz \"Failed to resolve symbol: " #symbolName "\"\n" \
+        ".text\n" \
+    );
 
 #elif defined(__arm64__) || defined(__aarch64__)
 #define _SL_SAFE_STUB_ASM(symbolName) \
