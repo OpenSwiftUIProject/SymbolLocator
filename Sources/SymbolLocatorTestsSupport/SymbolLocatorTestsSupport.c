@@ -10,3 +10,7 @@ DEFINE_SL_STUB_SLF(SymbolLocatorTestsSupportTestStub_UpdateLocked, SwiftUI, $s7S
 // Unknown symbol
 DEFINE_SL_SAFE_STUB_SLF(SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_VOID, SwiftUI, UNKNOWN_SYMBOL_VOID);
 DEFINE_SL_SAFE_STUB_SLF(SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_CGCOLOR, SwiftUI, UNKNOWN_SYMBOL_CGCOLOR);
+
+// Unknown symbol with safe
+DEFINE_SL_SAFE_STUB_SLF(SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_SAFE_VOID, SwiftUI, UNKNOWN_SYMBOL_SAFE_VOID);
+DEFINE_SL_SAFE_STUB_SLF(SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_SAFE_CGCOLOR, SwiftUI, UNKNOWN_SYMBOL_SAFE_CGCOLOR);

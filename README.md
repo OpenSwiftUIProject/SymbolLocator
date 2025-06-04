@@ -45,16 +45,40 @@ When a symbol cannot be resolved at runtime, these safe stubs:
 
 **Important Note**: Safe stubs only prevent crashes for functions that return `void`. For functions that return values, you must still check if the symbol exists before calling, as a missing implementation will cause undefined behavior when the caller attempts to use the return value.
 
-```c
-// Define a safe stub for a void-returning function
-DEFINE_SL_SAFE_STUB_SLF(TestStub_UNKNOWN_SYMBOL_VOID, UIKit, _$s5UIKit14UpdateUIElementyyF);
+### Manual Symbol Checking
 
+For more robust safety that works with both void and value-returning functions, you can manually check if a symbol exists before calling it. Each stub automatically provides a corresponding pointer variable that you can check:
+
+```swift
+// Define stubs (safe or regular)
+DEFINE_SL_SAFE_STUB_SLF(TestStub_UNKNOWN_SYMBOL_VOID, UIKit, _$s5UIKit14UpdateUIElementyyF);
+DEFINE_SL_SAFE_STUB_SLF(TestStub_UNKNOWN_SYMBOL_CGCOLOR, UIKit, _$s5UIKit15GetBackgroundColorSo7CGColoraF);
+
+// Import the function and its pointer
 @_silgen_name("TestStub_UNKNOWN_SYMBOL_VOID")
 func unknown_symbol_void()
 
-unknown_symbol_void()
-// This will not crash even if _$s5UIKit14UpdateUIElementyyF cannot be resolved in UIKit at runtime
+@_silgen_name("TestStub_UNKNOWN_SYMBOL_VOID_ptr")
+let unknown_symbol_void_ptr: UnsafeRawPointer?
+
+@_silgen_name("TestStub_UNKNOWN_SYMBOL_CGCOLOR")
+func unknown_symbol_cgColor() -> CGColor
+
+@_silgen_name("TestStub_UNKNOWN_SYMBOL_CGCOLOR_ptr")
+let unknown_symbol_cgColor_ptr: UnsafeRawPointer?
+
+// Safe usage - works for both void and value-returning functions
+if unknown_symbol_void_ptr != nil {
+    unknown_symbol_void()
+}
+
+if unknown_symbol_cgColor_ptr != nil {
+    let color = unknown_symbol_cgColor()
+    // Use color safely
+}
 ```
+
+This approach provides complete safety for both void and value-returning functions by allowing you to verify symbol availability before attempting to call them.
 
 ### Finding Mangled Swift Symbols
 
