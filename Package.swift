@@ -12,11 +12,24 @@ let package = Package(
         ),
     ],
     targets: [
-        .target(name: "SymbolLocator", publicHeadersPath: "include"),
-        .target(name: "SymbolLocatorTestsSupport", dependencies: ["SymbolLocator"], publicHeadersPath: "."),
+        .target(
+            name: "SymbolLocator",
+            publicHeadersPath: "include"
+        ),
+        .target(
+            name: "SymbolLocatorTestsSupport",
+            dependencies: ["SymbolLocator"],
+            publicHeadersPath: "."
+        ),
         .testTarget(
             name: "SymbolLocatorTests",
-            dependencies: ["SymbolLocator", "SymbolLocatorTestsSupport"]
+            dependencies: [
+                "SymbolLocator",
+                "SymbolLocatorTestsSupport"
+            ],
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
+            ]
         ),
     ]
 )

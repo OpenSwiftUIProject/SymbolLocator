@@ -49,23 +49,44 @@ func updateLockedExample() async throws {
     }
 }
 
+@_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_VOID_ptr")
+let unknown_symbol_void_ptr: UnsafeRawPointer?
+
 @_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_VOID")
 func unknown_symbol_void()
+
+@_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_CGCOLOR_ptr")
+let unknown_symbol_cgColor_ptr: UnsafeRawPointer?
 
 @_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_CGCOLOR")
 func unknown_symbol_cgColor() -> CGColor
 
 @Test
 func nonExistSymbol() {
-    unknown_symbol_void()
+    if unknown_symbol_void_ptr != nil {
+        unknown_symbol_void()
+    }
+    if unknown_symbol_cgColor_ptr != nil {
+        _ = unknown_symbol_cgColor()
+    }
+}
+
+@_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_SAFE_VOID")
+func unknown_symbol_safe_void()
+
+@_silgen_name("SymbolLocatorTestsSupportTestStub_UNKNOWN_SYMBOL_SAFE_CGCOLOR")
+func unknown_symbol_safe_cgColor() -> CGColor
+
+@Test
+func nonExistSymbolSafe() {
+    unknown_symbol_safe_void()
 
     #if compiler(>=6.2) && os(macOS)
     await #expect(processExitsWith: .failure) {
-        let color = unknown_symbol_cgColor()
+        let color = unknown_symbol_safe_cgColor()
         color.alpha
     }
     #endif
 }
-
 
 #endif
